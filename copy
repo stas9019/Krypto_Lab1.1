@@ -1,0 +1,188 @@
+package com.company;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Decoder {
+
+    int cypherSize;
+    String fileName;
+    List<  List<Integer>  > key;
+    List<  List<Integer>  > cyphers;
+    List<  List<Integer>  > XORedCyphers;
+
+
+
+    Decoder(String fileName)
+    {
+        this.fileName = fileName;
+        cyphers = new ArrayList<>();
+        XORedCyphers  = new ArrayList<>();
+        key = new ArrayList<>();
+    }
+
+
+    private void readCyphers() throws FileNotFoundException, IOException{
+
+        BufferedReader reader = new BufferedReader(new FileReader(fileName));
+
+        String line;
+
+
+        List<Integer> cypher = new ArrayList<>();
+
+        line = reader.readLine();
+        for(String block : line.split(" "))
+        {
+            cypher.add(Integer.parseInt(block, 2));
+        }
+        cypherSize = cypher.size();
+        cyphers.add(cypher);
+
+        while ((line = reader.readLine()) != null)
+        {
+            cypher = new ArrayList<>();
+            for(String block : line.split(" "))
+            {
+
+                cypher.add(Integer.parseInt(block, 2));
+
+            }
+
+            cypher = cypher.subList(0, cypherSize);
+            cyphers.add(cypher);
+
+        }
+
+        reader.close();
+
+    }
+
+    public ArrayList<Integer> and(List<Integer> a, List<Integer> b)
+    {
+        ArrayList<Integer> aANDb = new ArrayList<>();
+        for(int i = 0 ; i < cypherSize; i++)
+        {
+
+            if((a.get(i) == 'Y' && b.get(i) == 'Y'))
+                aANDb.add((int)'Y');
+            else
+                aANDb.add((int)'_');
+
+        }
+
+        return aANDb;
+    }
+
+    public ArrayList<Integer> xor(List<Integer> a, List<Integer> b)
+    {
+        ArrayList<Integer> aXORb = new ArrayList<>();
+
+        for(int i = 0 ; i < cypherSize; i++)
+        {
+            char c = (char)(a.get(i) ^ b.get(i));
+
+            if(('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z'))
+                c = 'Y';
+            else
+                c = '_';
+
+            aXORb.add((int)c);
+        }
+        return aXORb;
+    }
+
+
+    private void xorToFindSpaces()
+    {
+        int cypherNum = cyphers.size();
+        List<Integer> firstAND;
+        List<Integer> secondAND;
+
+        for (int i = 0; i < cyphers.size(); i++)
+        {
+
+            firstAND = and(xor(cyphers.get(i), cyphers.get((i + 1) % cypherNum)),
+                           xor(cyphers.get(i), cyphers.get((i + 2) % cypherNum)));
+
+            secondAND = and(xor(cyphers.get(i), cyphers.get((i + 3) % cypherNum)),
+                            xor(cyphers.get(i), cyphers.get((i + 4) % cypherNum)));
+
+
+            XORedCyphers.add(and(firstAND, secondAND));
+
+            for(Integer symbol : XORedCyphers.get(XORedCyphers.size() - 1))
+                System.out.print((char) symbol.intValue());
+            System.out.println();
+
+        }
+
+
+    }
+
+    private void findKey()
+    {
+
+
+        for (int i = 0; i < cypherSize; i++)
+        {
+            key.add(new ArrayList<Integer>());
+            for(int j = 0 ; j < XORedCyphers.size() ; j++)
+            {
+                if(XORedCyphers.get(j).get(i) == 'Y')
+                {
+                    if(!key.get(i).contains(cyphers.get(j).get(i) ^ ' '))
+                        key.get(i).add(cyphers.get(j).get(i) ^ ' ');
+
+                    //break;
+                }
+
+
+            }
+
+        }
+
+    }
+
+    private void decodeCypher()
+    {
+        for (int i = 0; i < key.size(); i++)
+        {
+            if( key.get(i).isEmpty())
+                System.out.print("?");
+            else
+                for (int k : key.get(i))
+                    System.out.print((char)(cyphers.get(0).get(i) ^ k));
+
+            System.out.print(" ");
+        }
+
+
+    }
+
+    public static void main(String[] args) {
+
+
+        Decoder decoder = new Decoder(args[0]);
+
+        try {
+            decoder.readCyphers();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        decoder.xorToFindSpaces();
+        decoder.findKey();
+        decoder.decodeCypher();
+
+
+
+
+    }
+}
