@@ -1,4 +1,4 @@
-package com.company;
+package stas.crypto;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
